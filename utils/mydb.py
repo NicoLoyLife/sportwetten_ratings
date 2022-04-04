@@ -23,8 +23,9 @@ def getDatabase():
             if retries > 0:
                 logging.info("Solved!")
 
-        except mc.Error:
+        except mc.Error as e:
             logging.info("Fehler bei der Datenbankverbindung. Versuche es in 30 Sekunden erneut.")
+            print(e)
             time.sleep(30)
             retries += 1
 

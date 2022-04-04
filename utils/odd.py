@@ -1,9 +1,9 @@
 import time
 from json import JSONDecodeError
-
 import requests
 import os
 import mydb
+from utils import abfrage
 from slugify import slugify
 import json
 from queue import Queue
@@ -48,75 +48,40 @@ class Worker(Thread):
             try:
                 url = "https://v3.football.api-sports.io/status"
 
-                headers = {
-                    'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-                    'x-rapidapi-host': 'v3.football.api-sports.io'
-                }
+                data = abfrage(url)
 
-                data = False
-                while not data:
-                    response = requests.get(url=url, headers=headers, timeout=60)
-                    response.encoding = 'utf-8'
-                    data = response.json()['response']
+                if data:
+                    current = data['response']['requests']['current']
+                    limit_day = data['response']['requests']['limit_day']
 
-                current = data['requests']['current']
-                limit_day = data['requests']['limit_day']
+                    if current < limit_day:
 
-                if current < limit_day:
+                        url = "https://v3.football.api-sports.io/odds?fixture={}".format(match_id)
 
-                    url = "https://v3.football.api-sports.io/odds?fixture={}".format(match_id)
-
-                    headers = {
-                        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-                        'x-rapidapi-host': 'v3.football.api-sports.io'
-                    }
-
-                    retries = 1
-                    success = False
-
-                    while not success and retries <= 5:
+                        data = abfrage(url)
                         try:
-                            response = requests.get(url=url, headers=headers, timeout=60)
-                            response.encoding = 'utf-8'
-                            success = response.ok
-                            if success and retries > 1:
-                                logging.info("Solved!")
-                        except requests.exceptions.RequestException:
-                            wait = 30 * retries
-                            logging.info("Request-Error! Versuche es in {wait} Sekunden erneut.".format(wait=wait))
-                            time.sleep(wait)
-                            retries += 1
+                            bookies = data['response'][0]['bookmakers']
+                        except IndexError:
+                            print(json.dumps(data, indent=4))
                         else:
-                            try:
-                                errors = response.json()['errors']
-                            except JSONDecodeError:
-                                print(json.dumps(response.json(), indent=4))
-                            else:
-                                if not errors:
-                                    data = response.json()['response']
-                                    try:
-                                        bookies = data[0]['bookmakers']
-                                    except IndexError:
-                                        print(json.dumps(data, indent=4))
-                                    else:
-                                        for bookie in bookies:
-                                            bookmaker_id = bookie['id']
-                                            bets = bookie['bets']
+                            for bookie in bookies:
+                                bookmaker_id = bookie['id']
+                                bets = bookie['bets']
 
-                                            for bet in bets:
-                                                bet_id = bet['id']
-                                                values = bet['values']
+                                for bet in bets:
+                                    bet_id = bet['id']
+                                    values = bet['values']
 
-                                                for v in values:
-                                                    quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
-                                                              'bet_id': bet_id, 'value': v['value'],
-                                                              'odd': v['odd']}
+                                    for v in values:
+                                        quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
+                                                  'bet_id': bet_id, 'value': v['value'],
+                                                  'odd': v['odd']}
 
-                                                    # print(quoten)
-                                                    updateOdds(quoten)
+                                        # print(quoten)
+                                        updateOdds(quoten)
 
-                else:
-                    logging.info("Requests für heute aufgebraucht.")
+                    else:
+                        logging.info("Requests für heute aufgebraucht.")
 
             finally:
                 self.queue.task_done()
@@ -126,76 +91,40 @@ class Worker(Thread):
 def odds_mapping():
     url = "https://v3.football.api-sports.io/status"
 
-    headers = {
-        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-        'x-rapidapi-host': 'v3.football.api-sports.io'
-    }
+    data = abfrage(url)
 
-    data = False
-    while not data:
-        response = requests.get(url=url, headers=headers, timeout=60)
-        response.encoding = 'utf-8'
-        data = response.json()['response']
+    if data:
+        current = data['response']['requests']['current']
+        limit_day = data['response']['requests']['limit_day']
 
-    current = data['requests']['current']
-    limit_day = data['requests']['limit_day']
+        if current < limit_day:
+            queue = Queue()
 
-    if current < limit_day:
-        queue = Queue()
+            # create 10 worker threads
+            for x in range(10):
+                worker = Worker(queue)
+                worker.daemon = True
+                worker.start()
 
-        # create 10 worker threads
-        for x in range(10):
-            worker = Worker(queue)
-            worker.daemon = True
-            worker.start()
+            # Put the tasks into the queue
+            url = "https://v3.football.api-sports.io/odds/mapping"
 
-        # Put the tasks into the queue
-        url = "https://v3.football.api-sports.io/odds/mapping"
+            paging = abfrage(url)
 
-        headers = {
-            'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-            'x-rapidapi-host': 'v3.football.api-sports.io'
-        }
+            if paging:
+                for page in range(1, paging['paging']['total']+1):
+                    url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
 
-        retries = 1
-        success = False
+                    data = abfrage(url)
 
-        while not success and retries <= 5:
-            try:
-                response = requests.get(url=url, headers=headers, timeout=60)
-                response.encoding = 'utf-8'
-                success = response.ok
-                if success and retries > 1:
-                    logging.info("Solved!")
-            except requests.exceptions.RequestException:
-                wait = 30 * retries
-                logging.info("Request-Error! Versuche es in {wait} Sekunden erneut.".format(wait=wait))
-                time.sleep(wait)
-                retries += 1
-            else:
-                errors = response.json()['errors']
-                if not errors:
-                    paging = response.json()['paging']['total']
+                    for d in data['response']:
+                        match_id = d['fixture']['id']
 
-                    for page in range(1, paging+1):
-                        url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
+                        queue.put(match_id)
 
-                        headers = {
-                            'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-                            'x-rapidapi-host': 'v3.football.api-sports.io'
-                        }
-
-                        response = requests.get(url=url, headers=headers, timeout=60)
-                        response.encoding = 'utf-8'
-                        data = response.json()['response']
-
-                        for d in data:
-                            match_id = d['fixture']['id']
-
-                            queue.put(match_id)
-
-        # Causes the main thread to wait for the queue to finish processing all the tasks
-        queue.join()
+            # Causes the main thread to wait for the queue to finish processing all the tasks
+            queue.join()
+            logging.info("Finished!")
 
     else:
         logging.info("Requests für heute aufgebraucht!")
