@@ -20,7 +20,7 @@ def getDatabase():
                 passwd=os.environ["DB_PASSWD_2"],
                 db="sportwettenratings"
             )
-            if retries > 1:
+            if retries > 0:
                 logging.info("Solved!")
 
         except mc.Error:
