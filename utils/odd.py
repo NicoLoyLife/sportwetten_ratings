@@ -50,7 +50,7 @@ class Worker(Thread):
 
                 data = abfrage(url)
 
-                if data:
+                if data and len(data['response']) > 0:
                     current = data['response']['requests']['current']
                     limit_day = data['response']['requests']['limit_day']
 
@@ -59,26 +59,27 @@ class Worker(Thread):
                         url = "https://v3.football.api-sports.io/odds?fixture={}".format(match_id)
 
                         data = abfrage(url)
-                        try:
-                            bookies = data['response'][0]['bookmakers']
-                        except IndexError:
-                            print(json.dumps(data, indent=4))
-                        else:
-                            for bookie in bookies:
-                                bookmaker_id = bookie['id']
-                                bets = bookie['bets']
+                        if data and len(data['response']) > 0:
+                            try:
+                                bookies = data['response'][0]['bookmakers']
+                            except IndexError:
+                                print(json.dumps(data, indent=4))
+                            else:
+                                for bookie in bookies:
+                                    bookmaker_id = bookie['id']
+                                    bets = bookie['bets']
 
-                                for bet in bets:
-                                    bet_id = bet['id']
-                                    values = bet['values']
+                                    for bet in bets:
+                                        bet_id = bet['id']
+                                        values = bet['values']
 
-                                    for v in values:
-                                        quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
-                                                  'bet_id': bet_id, 'value': v['value'],
-                                                  'odd': v['odd']}
+                                        for v in values:
+                                            quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
+                                                      'bet_id': bet_id, 'value': v['value'],
+                                                      'odd': v['odd']}
 
-                                        # print(quoten)
-                                        updateOdds(quoten)
+                                            # print(quoten)
+                                            updateOdds(quoten)
 
                     else:
                         logging.info("Requests für heute aufgebraucht.")
@@ -93,7 +94,7 @@ def odds_mapping():
 
     data = abfrage(url)
 
-    if data:
+    if data and len(data['response']) > 0:
         current = data['response']['requests']['current']
         limit_day = data['response']['requests']['limit_day']
 
@@ -111,16 +112,18 @@ def odds_mapping():
 
             paging = abfrage(url)
 
-            if paging:
+            if paging and len(paging['response']) > 0:
                 for page in range(1, paging['paging']['total']+1):
                     url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
 
                     data = abfrage(url)
 
-                    for d in data['response']:
-                        match_id = d['fixture']['id']
+                    if data and len(data['response']) > 0:
 
-                        queue.put(match_id)
+                        for d in data['response']:
+                            match_id = d['fixture']['id']
+
+                            queue.put(match_id)
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
