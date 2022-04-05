@@ -60,7 +60,8 @@ def abfrage(url):
             try:
                 errors = response.json()['errors']
             except JSONDecodeError:
-                print(json.dumps(response.json(), indent=4))
+                print(response.status_code)
+                print(response)
             else:
                 if not errors:
                     data = response.json()

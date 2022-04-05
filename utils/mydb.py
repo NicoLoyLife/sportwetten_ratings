@@ -25,7 +25,7 @@ def getDatabase():
 
         except mc.Error as e:
             logging.info("Fehler bei der Datenbankverbindung. Versuche es in 30 Sekunden erneut.")
-            print(e)
+            logging.info(e)
             time.sleep(30)
             retries += 1
 
@@ -40,7 +40,7 @@ def pushQuery(sql):
         connection.commit()
     except mc.DatabaseError as e:
         print("Fehler bei der Abfrage:", sql)
-        print(e)
+        logging.info(e)
     finally:
         cursor.close()
         connection.close()

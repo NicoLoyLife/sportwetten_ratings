@@ -132,6 +132,12 @@ class Statistic(models.Model):
     counter_attacks_a = models.IntegerField(null=True)
     substitutions_h = models.IntegerField(null=True)
     substitutions_a = models.IntegerField(null=True)
+    free_kicks_h = models.IntegerField(null=True)
+    free_kicks_a = models.IntegerField(null=True)
+    goal_attempts_h = models.IntegerField(null=True)
+    goal_attempts_a = models.IntegerField(null=True)
+    goals_h = models.IntegerField(null=True)
+    goals_a = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']

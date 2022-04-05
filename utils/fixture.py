@@ -111,7 +111,7 @@ def statistics(match_id):
                 else:
                     stats[name] = t['value']
 
-        # print(stats)
+        print(stats)
         updateStats(stats)
 
 
@@ -157,9 +157,9 @@ def fixtures(season_id, year, league_id):
                         fixture['awayteam_id'] = mydb.getTeamToSeason(
                             d['teams']['away']['id'], season_id)['id']
                     except IndexError:
-                        print(json.dumps(d, indent=4))
+                        print(d)
 
-                    # print(fixture)
+                    print(fixture)
                     updateFixture(fixture)
 
                     # Statistics holen
