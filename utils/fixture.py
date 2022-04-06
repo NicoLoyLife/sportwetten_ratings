@@ -111,7 +111,7 @@ def statistics(match_id):
                 else:
                     stats[name] = t['value']
 
-        print(stats)
+        # print(stats)
         updateStats(stats)
 
 
@@ -201,7 +201,7 @@ def main():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(1):
+            for x in range(10):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()

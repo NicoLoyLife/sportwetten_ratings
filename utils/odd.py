@@ -78,7 +78,7 @@ class Worker(Thread):
                                                       'bet_id': bet_id, 'value': v['value'],
                                                       'odd': v['odd']}
 
-                                            # print(quoten)
+                                            print(quoten)
                                             updateOdds(quoten)
 
                     else:
@@ -102,7 +102,7 @@ def odds_mapping():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(1):
+            for x in range(10):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
