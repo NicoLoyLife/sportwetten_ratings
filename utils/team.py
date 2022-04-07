@@ -2,7 +2,7 @@ import time
 import requests
 import os
 import mydb
-from utils import downloader
+from utils import downloader, abfrage
 from slugify import slugify
 import json
 from queue import Queue
@@ -73,72 +73,42 @@ class Worker(Thread):
             try:
                 url = "https://v3.football.api-sports.io/status"
 
-                headers = {
-                    'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-                    'x-rapidapi-host': 'v3.football.api-sports.io'
-                }
+                data = abfrage(url)
 
-                data = False
-                while not data:
-                    response = requests.get(url=url, headers=headers, timeout=60)
-                    response.encoding = 'utf-8'
-                    data = response.json()['response']
+                if data and len(data['response']) > 0:
+                    current = data['response']['requests']['current']
+                    limit_day = data['response']['requests']['limit_day']
 
-                current = data['requests']['current']
-                limit_day = data['requests']['limit_day']
+                    if current < limit_day:
 
-                if current < limit_day:
+                        url = "https://v3.football.api-sports.io/teams?league={league_id}&season={year}".format(
+                            league_id=league_id, year=year)
 
-                    url = "https://v3.football.api-sports.io/teams?league={league_id}&season={year}".format(
-                        league_id=league_id, year=year)
+                        data = abfrage(url)
 
-                    headers = {
-                        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-                        'x-rapidapi-host': 'v3.football.api-sports.io'
-                    }
+                        if data and len(data['response']) > 0:
+                            for d in data['response']:
+                                team = {'id': d['team']['id'], 'name': d['team']['name'],
+                                        'national': d['team']['national'],
+                                        'slug': slugify(d['team']['name']),
+                                        'country_id': country_id}
 
-                    retries = 1
-                    success = False
+                                if d['team']['code'] is not None:
+                                    team['code'] = d['team']['code']
 
-                    while not success and retries <= 5:
-                        try:
-                            response = requests.get(url=url, headers=headers, timeout=60)
-                            response.encoding = 'utf-8'
-                            success = response.ok
-                            if success and retries > 1:
-                                logging.info("Solved!")
-                        except requests.exceptions.RequestException:
-                            wait = 30 * retries
-                            logging.info("Request-Error! Versuche es in {wait} Sekunden erneut.".format(wait=wait))
-                            time.sleep(wait)
-                            retries += 1
-                        else:
-                            errors = response.json()['errors']
-                            if not errors:
-                                data = response.json()['response']
+                                if d['team']['logo'] is not None:
+                                    team['logo'] = 'team-logos/{}'.format(
+                                        d['team']['logo'].split('/')[-1])
+                                    downloader(d['team']['logo'], team['logo'])
 
-                                for d in data:
-                                    team = {'id': d['team']['id'], 'name': d['team']['name'],
-                                            'national': d['team']['national'],
-                                            'slug': slugify(d['team']['name']),
-                                            'country_id': country_id}
+                                teamtoseason = {'season_id': season_id, 'team_id': team['id']}
 
-                                    if d['team']['code'] is not None:
-                                        team['code'] = d['team']['code']
+                                # print(team)
+                                updateTeam(team)
+                                updateTeamToSeason(teamtoseason)
 
-                                    if d['team']['logo'] is not None:
-                                        team['logo'] = 'team-logos/{}'.format(
-                                            d['team']['logo'].split('/')[-1])
-                                        downloader(d['team']['logo'], team['logo'])
-
-                                    teamtoseason = {'season_id': season_id, 'team_id': team['id']}
-
-                                    # print(team)
-                                    updateTeam(team)
-                                    updateTeamToSeason(teamtoseason)
-
-                else:
-                    logging.info("Requests für heute aufgebraucht.")
+                    else:
+                        logging.info("Requests für heute aufgebraucht.")
 
             finally:
                 self.queue.task_done()
@@ -148,47 +118,39 @@ class Worker(Thread):
 def teams():
     url = "https://v3.football.api-sports.io/status"
 
-    headers = {
-        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-        'x-rapidapi-host': 'v3.football.api-sports.io'
-    }
+    data = abfrage(url)
 
-    data = False
-    while not data:
-        response = requests.get(url=url, headers=headers, timeout=60)
-        response.encoding = 'utf-8'
-        data = response.json()['response']
+    if data and len(data['response']) > 0:
+        current = data['response']['requests']['current']
+        limit_day = data['response']['requests']['limit_day']
 
-    current = data['requests']['current']
-    limit_day = data['requests']['limit_day']
+        if current < limit_day:
+            queue = Queue()
 
-    if current < limit_day:
-        queue = Queue()
+            # create 10 worker threads
+            for x in range(10):
+                worker = Worker(queue)
+                worker.daemon = True
+                worker.start()
 
-        # create 10 worker threads
-        for x in range(10):
-            worker = Worker(queue)
-            worker.daemon = True
-            worker.start()
+            # Put the tasks into the queue
+            all_seasons = mydb.getSeasons()
 
-        # Put the tasks into the queue
-        all_seasons = mydb.getSeasons()
+            for s in all_seasons:
+                season_id = s['id']
+                year = s['year']
+                league_id = s['league_id']
+                country_id = mydb.getLeague(league_id)['country_id']
 
-        for s in all_seasons:
-            season_id = s['id']
-            year = s['year']
-            league_id = s['league_id']
-            country_id = mydb.getLeague(league_id)['country_id']
+                queue.put((season_id, year, league_id, country_id))
 
-            queue.put((season_id, year, league_id, country_id))
+            # Causes the main thread to wait for the queue to finish processing all the tasks
+            queue.join()
 
-        # Causes the main thread to wait for the queue to finish processing all the tasks
-        queue.join()
+        else:
+            logging.info("Requests für heute aufgebraucht!")
 
-    else:
-        logging.info("Requests für heute aufgebraucht!")
-
-    # print(json.dumps(data, indent=4))
+        # print(json.dumps(data, indent=4))
 
 
 # Press the green button in the gutter to run the script.

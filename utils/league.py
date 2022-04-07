@@ -2,7 +2,7 @@ import time
 import requests
 import os
 import mydb
-from utils import downloader
+from utils import downloader, abfrage
 from slugify import slugify
 import json
 import logging
@@ -62,76 +62,46 @@ def updateLeague(data):
 def leagues():
     url = "https://v3.football.api-sports.io/status"
 
-    headers = {
-        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-        'x-rapidapi-host': 'v3.football.api-sports.io'
-    }
+    data = abfrage(url)
 
-    data = False
-    while not data:
-        response = requests.get(url=url, headers=headers, timeout=60)
-        response.encoding = 'utf-8'
-        data = response.json()['response']
+    if data and len(data['response']) > 0:
+        current = data['response']['requests']['current']
+        limit_day = data['response']['requests']['limit_day']
 
-    current = data['requests']['current']
-    limit_day = data['requests']['limit_day']
+        if current < limit_day:
 
-    if current < limit_day:
+            url = 'https://v3.football.api-sports.io/leagues'
 
-        url = 'https://v3.football.api-sports.io/leagues'
+            data = abfrage(url)
 
-        headers = {
-            'x-rapidapi-host': "v3.football.api-sports.io",
-            'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"]
-        }
+            if data and len(data['response']) > 0:
+                for d in data['response']:
+                    league = {'id': d['league']['id'], 'name': d['league']['name'], 'type': d['league']['type'],
+                              'slug': slugify(d['league']['name'])}
 
-        retries = 1
-        success = False
+                    if d['league']['logo'] is not None:
+                        league['logo'] = 'league-logos/{}'.format(d['league']['logo'].split('/')[-1])
+                        downloader(d['league']['logo'], league['logo'])
 
-        while not success and retries <= 5:
-            try:
-                response = requests.get(url=url, headers=headers, timeout=60)
-                response.encoding = 'utf-8'
-                success = response.ok
-                if success and retries > 1:
-                    logging.info("Solved!")
-            except requests.exceptions.RequestException:
-                wait = 30 * retries
-                logging.info("Request-Error! Versuche es in {wait} Sekunden erneut.".format(wait=wait))
-                time.sleep(wait)
-                retries += 1
-            else:
-                errors = response.json()['errors']
-                if not errors:
-                    data = response.json()['response']
+                    league['country_id'] = mydb.getCountry(d['country']['name'], d['country']['code'])['id']
 
-                    for d in data:
-                        league = {'id': d['league']['id'], 'name': d['league']['name'], 'type': d['league']['type'],
-                                  'slug': slugify(d['league']['name'])}
+                    # print(league)
+                    updateLeague(league)
 
-                        if d['league']['logo'] is not None:
-                            league['logo'] = 'league-logos/{}'.format(d['league']['logo'].split('/')[-1])
-                            downloader(d['league']['logo'], league['logo'])
+                    seasons = d['seasons']
 
-                        league['country_id'] = mydb.getCountry(d['country']['name'], d['country']['code'])['id']
+                    for s in seasons:
+                        season = {'year': s['year'], 'start': s['start'], 'end': s['end'],
+                                  'current': s['current'], 'league_id': d['league']['id'],
+                                  'slug': slugify(str(s['year']))}
 
-                        # print(league)
-                        updateLeague(league)
+                        # print(season)
+                        updateSeason(season)
 
-                        seasons = d['seasons']
+        else:
+            logging.info("Requests für heute aufgebraucht!")
 
-                        for s in seasons:
-                            season = {'year': s['year'], 'start': s['start'], 'end': s['end'],
-                                      'current': s['current'], 'league_id': d['league']['id'],
-                                      'slug': slugify(str(s['year']))}
-
-                            # print(season)
-                            updateSeason(season)
-
-    else:
-        logging.info("Requests für heute aufgebraucht!")
-
-    # print(json.dumps(data, indent=4))
+        # print(json.dumps(data, indent=4))
 
 
 # Press the green button in the gutter to run the script.

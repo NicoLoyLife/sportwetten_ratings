@@ -109,6 +109,7 @@ def odds_mapping():
 
             # Put the tasks into the queue
             url = "https://v3.football.api-sports.io/odds/mapping"
+            print(url)
 
             paging = abfrage(url)
 
@@ -129,8 +130,8 @@ def odds_mapping():
             queue.join()
             logging.info("Finished!")
 
-    else:
-        logging.info("Requests für heute aufgebraucht!")
+        else:
+            logging.info("Requests für heute aufgebraucht!")
 
     # print(json.dumps(data, indent=4))
 
