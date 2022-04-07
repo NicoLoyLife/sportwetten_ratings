@@ -51,17 +51,19 @@ def abfrage(url):
             success = response.ok
             if success and retries > 1:
                 logging.info("Solved! {}".format(response.status_code))
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as err:
             wait = 30 * retries
+            print("RequestException: {0}".format(err))
             logging.info("Request-Error! Versuche es in {wait} Sekunden erneut.".format(wait=wait))
             time.sleep(wait)
             retries += 1
         else:
             try:
                 errors = response.json()['errors']
-            except JSONDecodeError:
+            except JSONDecodeError as err:
                 print(response.status_code)
-                print(response)
+                print("JSONDecodeError: {0}".format(err))
+                print(response.content)
             else:
                 if not errors:
                     data = response.json()

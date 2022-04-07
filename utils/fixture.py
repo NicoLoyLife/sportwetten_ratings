@@ -159,7 +159,7 @@ def fixtures(season_id, year, league_id):
                     except IndexError:
                         print(d)
 
-                    print(fixture)
+                    # print(fixture)
                     updateFixture(fixture)
 
                     # Statistics holen

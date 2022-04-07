@@ -78,7 +78,7 @@ class Worker(Thread):
                                                       'bet_id': bet_id, 'value': v['value'],
                                                       'odd': v['odd']}
 
-                                            print(quoten)
+                                            # print(quoten)
                                             updateOdds(quoten)
 
                     else:
