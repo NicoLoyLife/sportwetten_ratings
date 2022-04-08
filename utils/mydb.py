@@ -107,3 +107,11 @@ def getTeamToSeason(team_id, season_id):
     teamtoseason = pullQuery(sql)
 
     return teamtoseason[0]
+
+
+def countFixtures():
+    sql = '''SELECT COUNT(*) FROM sportwettenratings_fixture'''
+
+    fixtures = pullQuery(sql)
+
+    return fixtures[0]
