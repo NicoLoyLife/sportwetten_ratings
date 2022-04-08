@@ -43,7 +43,7 @@ class Worker(Thread):
     def run(self):
         while True:
             # Get the work from the queue
-            match_id = self.queue.get()
+            match_id, results_number, results = self.queue.get()
 
             try:
                 url = "https://v3.football.api-sports.io/status"
@@ -80,7 +80,7 @@ class Worker(Thread):
 
                                             # print(quoten)
                                             updateOdds(quoten)
-                                print("Finished with match_id {}".format(match_id))
+                                print("Finished with match_id {}: {}/{}".format(match_id, results_number, results))
 
                     else:
                         logging.info("Requests für heute aufgebraucht.")
@@ -114,6 +114,7 @@ def odds_mapping():
             paging = abfrage(url)
 
             if paging and len(paging['response']) > 0:
+                results = paging['results']
                 for page in range(1, paging['paging']['total']+1):
                     url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
 
@@ -121,10 +122,12 @@ def odds_mapping():
 
                     if data and len(data['response']) > 0:
 
+                        results_number = 0
                         for d in data['response']:
                             match_id = d['fixture']['id']
+                            results_number += 1
 
-                            queue.put(match_id)
+                            queue.put((match_id, results_number, results))
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
