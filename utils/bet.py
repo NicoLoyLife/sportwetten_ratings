@@ -1,6 +1,7 @@
 import json
 import requests
 import mydb
+from utils import abfrage
 import os
 import time
 import logging
@@ -34,54 +35,29 @@ def updateBet(data):
 def bets():
     url = "https://v3.football.api-sports.io/status"
 
-    headers = {
-        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-        'x-rapidapi-host': 'v3.football.api-sports.io'
-    }
+    data = abfrage(url)
 
-    data = False
-    while not data:
-        response = requests.get(url=url, headers=headers, timeout=60)
-        data = response.json()['response']
+    if data and len(data['response']) > 0:
+        current = data['response']['requests']['current']
+        limit_day = data['response']['requests']['limit_day']
 
-    current = data['requests']['current']
-    limit_day = data['requests']['limit_day']
+        if current < limit_day:
 
-    if current < limit_day:
+            url = "https://v3.football.api-sports.io/odds/bets"
 
-        url = "https://v3.football.api-sports.io/odds/bets"
-        headers = {
-            'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"],
-            'x-rapidapi-host': 'v3.football.api-sports.io'
-        }
+            data = abfrage(url)
 
-        retries = 1
-        success = False
+            if data and len(data['response']) > 0:
+                for d in data['response']:
+                    if d['name'] is not None:
+                        bet = {'id': d['id'], 'name': d['name']}
 
-        while not success and retries <= 5:
-            try:
-                response = requests.get(url=url, headers=headers, timeout=60)
-                success = response.ok
-                if success and retries > 1:
-                    logging.info("solved!")
-            except requests.exceptions.Timeout:
-                wait = retries * 30
-                logging.info("Timeout Error! Try again in {} seconds.".format(wait))
-                time.sleep(wait)
-                retries += 1
-            else:
-                errors = response.json()['errors']
-                if not errors:
-                    data = response.json()['response']
+                        print(bet)
+                        updateBet(bet)
 
-                    for d in data:
-                        if d['name'] is not None:
-                            bet = {'id': d['id'], 'name': d['name']}
-
-                            print(bet)
-                            updateBet(bet)
-    else:
-        logging.info("Requests für heute aufgebraucht.")
+                logging.info("Finished with all Bets!")
+        else:
+            logging.info("Requests für heute aufgebraucht.")
 
 
 # Press the green button in the gutter to run the script.

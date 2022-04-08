@@ -106,6 +106,7 @@ class Worker(Thread):
                                 # print(team)
                                 updateTeam(team)
                                 updateTeamToSeason(teamtoseason)
+                            print("Finished with season_id {}".format(season_id))
 
                     else:
                         logging.info("Requests für heute aufgebraucht.")
@@ -146,6 +147,7 @@ def teams():
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
+            logging.info("Finished with all Teams!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

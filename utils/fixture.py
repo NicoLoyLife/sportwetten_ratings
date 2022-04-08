@@ -166,6 +166,7 @@ def fixtures(season_id, year, league_id):
                     statistics(match_id)
 
             seasonLastUpdated(season_id, date.today())
+            print("Finished with season_id {}".format(season_id))
 
         else:
             logging.info("Requests für heute aufgebraucht.")
@@ -218,6 +219,7 @@ def main():
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
+            logging.info("Finished with all Fixtures!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

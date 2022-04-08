@@ -80,6 +80,7 @@ class Worker(Thread):
 
                                             # print(quoten)
                                             updateOdds(quoten)
+                                print("Finished with match_id {}".format(match_id))
 
                     else:
                         logging.info("Requests für heute aufgebraucht.")
@@ -109,7 +110,6 @@ def odds_mapping():
 
             # Put the tasks into the queue
             url = "https://v3.football.api-sports.io/odds/mapping"
-            print(url)
 
             paging = abfrage(url)
 
@@ -128,7 +128,7 @@ def odds_mapping():
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
-            logging.info("Finished!")
+            logging.info("Finished with all Odds!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

@@ -97,6 +97,9 @@ def leagues():
 
                         # print(season)
                         updateSeason(season)
+                    print("Finished with league {}".format(league))
+
+                logging.info("Finished with all Leagues!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

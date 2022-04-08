@@ -61,6 +61,9 @@ def countries():
 
                     # print(country)
                     updateCountry(country)
+                    print("Finished with country {}".format(country))
+
+                logging.info("Finished with all Countries!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

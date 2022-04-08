@@ -139,7 +139,6 @@ class Statistic(models.Model):
     goals_h = models.IntegerField(null=True)
     goals_a = models.IntegerField(null=True)
 
-
     class Meta:
         ordering = ['id']
 

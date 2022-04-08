@@ -55,7 +55,6 @@ def abfrage(url):
             try:
                 fehler = response.json()['errors']
                 if not fehler:
-                    print("Keine Errors.")
                     data = response.json()
                     return data
                 else:
@@ -86,5 +85,3 @@ def abfrage(url):
             time.sleep(wait)
 
     logging.info("Problem bei: {}".format(url))
-
-    return False
