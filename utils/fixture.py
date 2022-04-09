@@ -168,9 +168,6 @@ def fixtures(season_id, year, league_id):
             seasonLastUpdated(season_id, date.today())
             print("Finished with season_id {}".format(season_id))
 
-        else:
-            logging.info("Requests für heute aufgebraucht.")
-
 
 class Worker(Thread):
     def __init__(self, queue):
