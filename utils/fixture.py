@@ -116,57 +116,48 @@ def statistics(match_id):
 
 
 def fixtures(season_id, year, league_id):
-    url = "https://v3.football.api-sports.io/status"
+    url = '''https://v3.football.api-sports.io/fixtures?league={}&season={}&timezone=Europe/Berlin'''. \
+        format(league_id, year)
 
     data = abfrage(url)
 
     if data and len(data['response']) > 0:
-        current = data['response']['requests']['current']
-        limit_day = data['response']['requests']['limit_day']
+        for d in data['response']:
+            match_id = d['fixture']['id']
 
-        if current < limit_day:
-            url = '''https://v3.football.api-sports.io/fixtures?league={}&season={}&timezone=Europe/Berlin'''. \
-                format(league_id, year)
+            fixture = {'id': match_id,
+                       'date': datetime.fromtimestamp(d['fixture']['timestamp']),
+                       'status_long': d['fixture']['status']['long'],
+                       'status_short': d['fixture']['status']['short'], 'season_id': season_id,
+                       'round': d['league']['round'],
+                       'homescore_ht': d['score']['halftime']['home'],
+                       'awayscore_ht': d['score']['halftime']['away'],
+                       'homescore_ft': d['score']['fulltime']['home'],
+                       'awayscore_ft': d['score']['fulltime']['away'],
+                       'homescore_et': d['score']['extratime']['home'],
+                       'awayscore_et': d['score']['extratime']['away'],
+                       'homescore_p': d['score']['penalty']['home'],
+                       'awayscore_p': d['score']['penalty']['away']}
 
-            data = abfrage(url)
+            try:
+                fixture['slug'] = getTeam(d['teams']['home']['id'])['name'] + "-" + \
+                                  getTeam(d['teams']['away']['id'])['name'] + "-" + \
+                                  str(d['fixture']['id'])
+                fixture['hometeam_id'] = mydb.getTeamToSeason(
+                    d['teams']['home']['id'], season_id)['id']
+                fixture['awayteam_id'] = mydb.getTeamToSeason(
+                    d['teams']['away']['id'], season_id)['id']
+            except IndexError:
+                print(d)
 
-            if data and len(data['response']) > 0:
-                for d in data['response']:
-                    match_id = d['fixture']['id']
+            # print(fixture)
+            updateFixture(fixture)
 
-                    fixture = {'id': match_id,
-                               'date': datetime.fromtimestamp(d['fixture']['timestamp']),
-                               'status_long': d['fixture']['status']['long'],
-                               'status_short': d['fixture']['status']['short'], 'season_id': season_id,
-                               'round': d['league']['round'],
-                               'homescore_ht': d['score']['halftime']['home'],
-                               'awayscore_ht': d['score']['halftime']['away'],
-                               'homescore_ft': d['score']['fulltime']['home'],
-                               'awayscore_ft': d['score']['fulltime']['away'],
-                               'homescore_et': d['score']['extratime']['home'],
-                               'awayscore_et': d['score']['extratime']['away'],
-                               'homescore_p': d['score']['penalty']['home'],
-                               'awayscore_p': d['score']['penalty']['away']}
+            # Statistics holen
+            statistics(match_id)
 
-                    try:
-                        fixture['slug'] = getTeam(d['teams']['home']['id'])['name'] + "-" + \
-                                          getTeam(d['teams']['away']['id'])['name'] + "-" + \
-                                          str(d['fixture']['id'])
-                        fixture['hometeam_id'] = mydb.getTeamToSeason(
-                            d['teams']['home']['id'], season_id)['id']
-                        fixture['awayteam_id'] = mydb.getTeamToSeason(
-                            d['teams']['away']['id'], season_id)['id']
-                    except IndexError:
-                        print(d)
-
-                    # print(fixture)
-                    updateFixture(fixture)
-
-                    # Statistics holen
-                    statistics(match_id)
-
-            seasonLastUpdated(season_id, date.today())
-            print("Finished with season_id {}".format(season_id))
+    seasonLastUpdated(season_id, date.today())
+    print("Finished with season_id {}".format(season_id))
 
 
 class Worker(Thread):
@@ -200,7 +191,7 @@ def main():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(5):
+            for x in range(2):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
