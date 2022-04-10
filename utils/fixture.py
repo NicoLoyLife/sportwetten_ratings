@@ -80,8 +80,7 @@ def getTeam(team_id):
 
 
 def statistics(match_id):
-    url = "https://v3.football.api-sports.io/fixtures/statistics?fixture={}".format(
-        match_id)
+    url = "https://v3.football.api-sports.io/fixtures/statistics?fixture={}".format(match_id)
 
     statistic = abfrage(url)
 
@@ -191,7 +190,7 @@ def main():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(2):
+            for x in range(5):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
