@@ -124,6 +124,7 @@ def fixtures(season_id, year, league_id):
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
+            print("Started with season_id {}".format(season_id))
             url = '''https://v3.football.api-sports.io/fixtures?league={}&season={}&timezone=Europe/Berlin'''. \
                 format(league_id, year)
 
