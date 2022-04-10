@@ -65,6 +65,7 @@ class Worker(Thread):
                             except IndexError:
                                 print(json.dumps(data, indent=4))
                             else:
+                                print("Started with match_id {}: {}/{}".format(match_id, results_number, results))
                                 for bookie in bookies:
                                     bookmaker_id = bookie['id']
                                     bets = bookie['bets']

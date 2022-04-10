@@ -3,9 +3,8 @@ import json
 import requests
 import os
 import mydb
-from utils import downloader
+from utils import downloader, abfrage
 import logging
-import http.client
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -13,19 +12,35 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    conn = http.client.HTTPSConnection("v3.football.api-sports.io")
+    # Put the tasks into the queue
+    url = "https://v3.football.api-sports.io/odds/mapping"
 
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': os.environ["API_FOOTBALL_KEY"]
-    }
+    paging = abfrage(url)
+    matches = []
 
-    conn.request("GET", "/status", headers=headers)
+    if paging and len(paging['response']) > 0:
+        # Anzahl der Ergebnisse
+        results = paging['results']
+        # Anzahl der Seiten ausgeben
+        print(paging['paging']['total'], "Seiten")
+        # Alle Seiten durchgehen
+        for page in range(1, paging['paging']['total'] + 1):
+            url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
 
-    res = conn.getresponse()
-    data = res.read()
+            data = abfrage(url)
+            print(json.dumps(data, indent=4))
 
-    print(data.decode("utf-8"))
+            if data and len(data['response']) > 0:
+
+                results_number = 0
+                for d in data['response']:
+                    match_id = d['fixture']['id']
+                    results_number += 1
+
+                    matches.append(match_id)
+                    print(match_id, results_number, "/", results)
+
+    print(len(matches))
 
 
 # Press the green button in the gutter to run the script.
