@@ -200,7 +200,7 @@ def main():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(10):
+            for x in range(5):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
