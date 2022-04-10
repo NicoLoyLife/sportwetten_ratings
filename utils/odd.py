@@ -100,38 +100,42 @@ def odds_mapping():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
-            queue = Queue()
-
-            # create 10 worker threads
-            for x in range(10):
-                worker = Worker(queue)
-                worker.daemon = True
-                worker.start()
-
             # Put the tasks into the queue
             url = "https://v3.football.api-sports.io/odds/mapping"
 
             paging = abfrage(url)
 
             if paging and len(paging['response']) > 0:
-                results = paging['results']
-                for page in range(1, paging['paging']['total']+1):
+                queue = Queue()
+                results = 0
+                results_number = 0
+                matches = []
+                for page in range(1, paging['paging']['total'] + 1):
                     url = "https://v3.football.api-sports.io/odds/mapping?page={}".format(page)
 
                     data = abfrage(url)
 
+                    results += data['results']
+
                     if data and len(data['response']) > 0:
 
-                        results_number = 0
                         for d in data['response']:
                             match_id = d['fixture']['id']
-                            results_number += 1
+                            matches.append(match_id)
 
-                            queue.put((match_id, results_number, results))
+                # create 10 worker threads
+                for x in range(10):
+                    worker = Worker(queue)
+                    worker.daemon = True
+                    worker.start()
 
-            # Causes the main thread to wait for the queue to finish processing all the tasks
-            queue.join()
-            logging.info("Finished with all Odds!")
+                for match in matches:
+                    results_number += 1
+                    queue.put((match, results_number, results))
+
+                # Causes the main thread to wait for the queue to finish processing all the tasks
+                queue.join()
+                logging.info("Finished with all Odds!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")
