@@ -42,7 +42,7 @@ def bookmakers():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
-
+            logging.info("Started with Bookmakers!")
             url = "https://v3.football.api-sports.io/odds/bookmakers"
 
             data = abfrage(url)
@@ -54,7 +54,7 @@ def bookmakers():
                     print(bookie)
                     updateBookmaker(bookie)
 
-                logging.info("Finished with all Bookmakers!")
+            logging.info("Finished with all Bookmakers!")
         else:
             logging.info("Requests für heute aufgebraucht.")
 

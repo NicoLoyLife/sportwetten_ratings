@@ -101,13 +101,14 @@ def odds_mapping():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
+            logging.info("Started with Odds!")
+            queue = Queue()
             # Put the tasks into the queue
             url = "https://v3.football.api-sports.io/odds/mapping"
 
             paging = abfrage(url)
 
             if paging and len(paging['response']) > 0:
-                queue = Queue()
                 results = 0
                 results_number = 0
                 matches = []
@@ -134,9 +135,9 @@ def odds_mapping():
                     results_number += 1
                     queue.put((match, results_number, results))
 
-                # Causes the main thread to wait for the queue to finish processing all the tasks
-                queue.join()
-                logging.info("Finished with all Odds!")
+            # Causes the main thread to wait for the queue to finish processing all the tasks
+            queue.join()
+            logging.info("Finished with all Odds!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

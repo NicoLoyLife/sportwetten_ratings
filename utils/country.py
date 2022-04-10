@@ -42,7 +42,7 @@ def countries():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
-
+            logging.info("Started with Countries!")
             url = 'https://v3.football.api-sports.io/countries'
 
             data = abfrage(url)
@@ -63,7 +63,7 @@ def countries():
                     updateCountry(country)
                     print("Finished with country {}".format(country))
 
-                logging.info("Finished with all Countries!")
+            logging.info("Finished with all Countries!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

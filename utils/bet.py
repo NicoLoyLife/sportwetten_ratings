@@ -42,7 +42,7 @@ def bets():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
-
+            logging.info("Started with Bets!")
             url = "https://v3.football.api-sports.io/odds/bets"
 
             data = abfrage(url)
@@ -55,7 +55,7 @@ def bets():
                         print(bet)
                         updateBet(bet)
 
-                logging.info("Finished with all Bets!")
+            logging.info("Finished with all Bets!")
         else:
             logging.info("Requests für heute aufgebraucht.")
 

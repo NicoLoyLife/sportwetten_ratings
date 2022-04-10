@@ -71,7 +71,7 @@ def leagues():
         if current < limit_day:
 
             url = 'https://v3.football.api-sports.io/leagues'
-
+            logging.info("Started with Leagues!")
             data = abfrage(url)
 
             if data and len(data['response']) > 0:
@@ -99,7 +99,7 @@ def leagues():
                         updateSeason(season)
                     print("Finished with league {}".format(league))
 
-                logging.info("Finished with all Leagues!")
+            logging.info("Finished with all Leagues!")
 
         else:
             logging.info("Requests für heute aufgebraucht!")

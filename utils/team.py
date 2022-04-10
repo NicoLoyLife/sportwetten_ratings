@@ -126,6 +126,7 @@ def teams():
         limit_day = data['response']['requests']['limit_day']
 
         if current < limit_day:
+            logging.info("Started with Teams!")
             queue = Queue()
 
             # create 10 worker threads
