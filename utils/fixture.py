@@ -131,6 +131,7 @@ def fixtures(season_id, year, league_id):
             data = abfrage(url)
 
             if data and len(data['response']) > 0:
+                print(data['results'], "Results in season", season_id)
                 for d in data['response']:
                     match_id = d['fixture']['id']
 
