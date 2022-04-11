@@ -99,4 +99,4 @@ def abfrage(url):
             logging.info("RequestException: {0} in Versuch Nummer {1}".format(err, retries))
             time.sleep(wait)
 
-    logging.info("Problem bei: {}".format(url))
+    # logging.info("Problem bei: {}".format(url))

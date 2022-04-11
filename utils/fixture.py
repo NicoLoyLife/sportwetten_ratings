@@ -166,8 +166,8 @@ def fixtures(season_id, year, league_id):
                     # Statistics holen
                     statistics(match_id)
 
-            seasonLastUpdated(season_id, date.today())
-            print("Finished with season_id {}".format(season_id))
+                seasonLastUpdated(season_id, date.today())
+                print("Finished with season_id {}".format(season_id))
 
 
 class Worker(Thread):

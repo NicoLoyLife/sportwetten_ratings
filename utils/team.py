@@ -130,7 +130,7 @@ def teams():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(5):
+            for x in range(2):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()

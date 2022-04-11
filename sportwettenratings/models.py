@@ -138,6 +138,8 @@ class Statistic(models.Model):
     goal_attempts_a = models.IntegerField(null=True)
     goals_h = models.IntegerField(null=True)
     goals_a = models.IntegerField(null=True)
+    throwins_h = models.IntegerField(null=True)
+    throwins_a = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']
