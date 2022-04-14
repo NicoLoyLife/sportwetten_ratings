@@ -2,7 +2,7 @@ import time
 import requests
 import os
 import mydb
-from utils import downloader, abfrage
+from utils import downloader, abfrage, status
 from slugify import slugify
 import json
 import logging
@@ -62,7 +62,7 @@ def updateLeague(data):
 def leagues():
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']

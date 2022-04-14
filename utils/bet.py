@@ -1,7 +1,7 @@
 import json
 import requests
 import mydb
-from utils import abfrage
+from utils import abfrage, status
 import os
 import time
 import logging
@@ -35,7 +35,7 @@ def updateBet(data):
 def bets():
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']

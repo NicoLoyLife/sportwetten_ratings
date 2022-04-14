@@ -2,7 +2,7 @@ import time
 import requests
 import os
 import mydb
-from utils import downloader, abfrage
+from utils import downloader, abfrage, status
 from slugify import slugify
 import json
 from queue import Queue
@@ -68,12 +68,12 @@ class Worker(Thread):
     def run(self):
         while True:
             # Get the work from the queue
-            season_id, year, league_id, country_id = self.queue.get()
+            season_id, year, league_id, country_id, counter, total_number = self.queue.get()
 
             try:
                 url = "https://v3.football.api-sports.io/status"
 
-                data = abfrage(url)
+                data = status(url)
 
                 if data and len(data['response']) > 0:
                     current = data['response']['requests']['current']
@@ -106,7 +106,7 @@ class Worker(Thread):
                                 # print(team)
                                 updateTeam(team)
                                 updateTeamToSeason(teamtoseason)
-                            print("Finished with season_id {}".format(season_id))
+                            print("Finished with {} from {}".format(counter, total_count))
 
                     else:
                         logging.info("Requests für heute aufgebraucht.")
@@ -119,7 +119,7 @@ class Worker(Thread):
 def teams():
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']
@@ -130,21 +130,23 @@ def teams():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(2):
+            for x in range(30):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
 
             # Put the tasks into the queue
             all_seasons = mydb.getSeasons()
+            counter = 0
 
             for s in all_seasons:
+                counter += 1
                 season_id = s['id']
                 year = s['year']
                 league_id = s['league_id']
                 country_id = mydb.getLeague(league_id)['country_id']
 
-                queue.put((season_id, year, league_id, country_id))
+                queue.put((season_id, year, league_id, country_id, counter, len(all_seasons)))
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()

@@ -18,6 +18,7 @@ python ~/sportwetten_ratings/utils/bookmaker.py
 python ~/sportwetten_ratings/utils/country.py
 python ~/sportwetten_ratings/utils/team.py
 python ~/sportwetten_ratings/utils/odd.py
+python ~/sportwetten_ratings/utils/fixture.py
 conda deactivate
 
 rm $Lockfile

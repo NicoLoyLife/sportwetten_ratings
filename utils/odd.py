@@ -3,7 +3,7 @@ from json import JSONDecodeError
 import requests
 import os
 import mydb
-from utils import abfrage
+from utils import abfrage, status
 from slugify import slugify
 import json
 from queue import Queue
@@ -48,7 +48,7 @@ class Worker(Thread):
             try:
                 url = "https://v3.football.api-sports.io/status"
 
-                data = abfrage(url)
+                data = status(url)
 
                 if data and len(data['response']) > 0:
                     current = data['response']['requests']['current']
@@ -94,7 +94,7 @@ class Worker(Thread):
 def odds_mapping():
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']
@@ -126,7 +126,7 @@ def odds_mapping():
                             matches.append(match_id)
 
                 # create 10 worker threads
-                for x in range(2):
+                for x in range(20):
                     worker = Worker(queue)
                     worker.daemon = True
                     worker.start()

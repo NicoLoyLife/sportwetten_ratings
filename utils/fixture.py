@@ -3,7 +3,7 @@ from datetime import datetime, date
 import requests
 import os
 import mydb
-from utils import abfrage
+from utils import abfrage, status
 import json
 from queue import Queue
 from threading import Thread
@@ -114,10 +114,10 @@ def statistics(match_id):
         updateStats(stats)
 
 
-def fixtures(season_id, year, league_id):
+def fixtures(season_id, year, league_id, counter, total_count):
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']
@@ -167,7 +167,7 @@ def fixtures(season_id, year, league_id):
                     statistics(match_id)
 
                 seasonLastUpdated(season_id, date.today())
-                print("Finished with season_id {}".format(season_id))
+                print("Finished with {} from {}".format(counter, total_count))
 
 
 class Worker(Thread):
@@ -178,10 +178,10 @@ class Worker(Thread):
     def run(self):
         while True:
             # Get the work from the queue
-            season_id, year, league_id = self.queue.get()
+            season_id, year, league_id, counter, total_count = self.queue.get()
 
             try:
-                fixtures(season_id, year, league_id)
+                fixtures(season_id, year, league_id, counter, total_count)
 
             finally:
                 self.queue.task_done()
@@ -190,7 +190,7 @@ class Worker(Thread):
 def main():
     url = "https://v3.football.api-sports.io/status"
 
-    data = abfrage(url)
+    data = status(url)
 
     if data and len(data['response']) > 0:
         current = data['response']['requests']['current']
@@ -201,20 +201,22 @@ def main():
             queue = Queue()
 
             # create 10 worker threads
-            for x in range(3):
+            for x in range(20):
                 worker = Worker(queue)
                 worker.daemon = True
                 worker.start()
 
             # Put the tasks into the queue
             all_seasons = mydb.getSeasons()
+            counter = 0
 
             for s in all_seasons:
+                counter += 1
                 season_id = s['id']
                 year = s['year']
                 league_id = s['league_id']
 
-                queue.put((season_id, year, league_id))
+                queue.put((season_id, year, league_id, counter, len(all_seasons)))
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()
