@@ -46,45 +46,32 @@ class Worker(Thread):
             match_id, results_number, results = self.queue.get()
 
             try:
-                url = "https://v3.football.api-sports.io/status"
+                url = "https://v3.football.api-sports.io/odds?fixture={}".format(match_id)
 
-                data = status(url)
-
+                data = abfrage(url)
                 if data and len(data['response']) > 0:
-                    current = data['response']['requests']['current']
-                    limit_day = data['response']['requests']['limit_day']
-
-                    if current < limit_day:
-
-                        url = "https://v3.football.api-sports.io/odds?fixture={}".format(match_id)
-
-                        data = abfrage(url)
-                        if data and len(data['response']) > 0:
-                            try:
-                                bookies = data['response'][0]['bookmakers']
-                            except IndexError:
-                                print(json.dumps(data, indent=4))
-                            else:
-                                print("Started with match_id {}: {}/{}".format(match_id, results_number, results))
-                                for bookie in bookies:
-                                    bookmaker_id = bookie['id']
-                                    bets = bookie['bets']
-
-                                    for bet in bets:
-                                        bet_id = bet['id']
-                                        values = bet['values']
-
-                                        for v in values:
-                                            quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
-                                                      'bet_id': bet_id, 'value': v['value'],
-                                                      'odd': v['odd']}
-
-                                            # print(quoten)
-                                            updateOdds(quoten)
-                                print("Finished with match_id {}: {}/{}".format(match_id, results_number, results))
-
+                    try:
+                        bookies = data['response'][0]['bookmakers']
+                    except IndexError:
+                        print(json.dumps(data, indent=4))
                     else:
-                        logging.info("Requests für heute aufgebraucht.")
+                        print("Started with match_id {}: {}/{}".format(match_id, results_number, results))
+                        for bookie in bookies:
+                            bookmaker_id = bookie['id']
+                            bets = bookie['bets']
+
+                            for bet in bets:
+                                bet_id = bet['id']
+                                values = bet['values']
+
+                                for v in values:
+                                    quoten = {'match_id': match_id, 'bookmaker_id': bookmaker_id,
+                                              'bet_id': bet_id, 'value': v['value'],
+                                              'odd': v['odd']}
+
+                                    # print(quoten)
+                                    updateOdds(quoten)
+                        print("Finished with match_id {}: {}/{}".format(match_id, results_number, results))
 
             finally:
                 self.queue.task_done()

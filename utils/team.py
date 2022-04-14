@@ -68,48 +68,35 @@ class Worker(Thread):
     def run(self):
         while True:
             # Get the work from the queue
-            season_id, year, league_id, country_id, counter, total_number = self.queue.get()
+            season_id, year, league_id, country_id, counter, total_count = self.queue.get()
 
             try:
-                url = "https://v3.football.api-sports.io/status"
+                url = "https://v3.football.api-sports.io/teams?league={league_id}&season={year}".format(
+                    league_id=league_id, year=year)
 
-                data = status(url)
+                data = abfrage(url)
 
                 if data and len(data['response']) > 0:
-                    current = data['response']['requests']['current']
-                    limit_day = data['response']['requests']['limit_day']
+                    for d in data['response']:
+                        team = {'id': d['team']['id'], 'name': d['team']['name'],
+                                'national': d['team']['national'],
+                                'slug': slugify(d['team']['name']),
+                                'country_id': country_id}
 
-                    if current < limit_day:
+                        if d['team']['code'] is not None:
+                            team['code'] = d['team']['code']
 
-                        url = "https://v3.football.api-sports.io/teams?league={league_id}&season={year}".format(
-                            league_id=league_id, year=year)
+                        if d['team']['logo'] is not None:
+                            team['logo'] = 'team-logos/{}'.format(
+                                d['team']['logo'].split('/')[-1])
+                            downloader(d['team']['logo'], team['logo'])
 
-                        data = abfrage(url)
+                        teamtoseason = {'season_id': season_id, 'team_id': team['id']}
 
-                        if data and len(data['response']) > 0:
-                            for d in data['response']:
-                                team = {'id': d['team']['id'], 'name': d['team']['name'],
-                                        'national': d['team']['national'],
-                                        'slug': slugify(d['team']['name']),
-                                        'country_id': country_id}
-
-                                if d['team']['code'] is not None:
-                                    team['code'] = d['team']['code']
-
-                                if d['team']['logo'] is not None:
-                                    team['logo'] = 'team-logos/{}'.format(
-                                        d['team']['logo'].split('/')[-1])
-                                    downloader(d['team']['logo'], team['logo'])
-
-                                teamtoseason = {'season_id': season_id, 'team_id': team['id']}
-
-                                # print(team)
-                                updateTeam(team)
-                                updateTeamToSeason(teamtoseason)
-                            print("Finished with {} from {}".format(counter, total_count))
-
-                    else:
-                        logging.info("Requests für heute aufgebraucht.")
+                        # print(team)
+                        updateTeam(team)
+                        updateTeamToSeason(teamtoseason)
+                    print("Finished with {} from {}".format(counter, total_count))
 
             finally:
                 self.queue.task_done()
