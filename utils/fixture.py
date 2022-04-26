@@ -4,6 +4,7 @@ import requests
 import os
 import mydb
 from utils import abfrage, status
+from slugify import slugify
 import json
 from queue import Queue
 from threading import Thread
@@ -141,9 +142,9 @@ def fixtures(season_id, year, league_id, counter, total_count):
                        'awayscore_p': d['score']['penalty']['away']}
 
             try:
-                fixture['slug'] = getTeam(d['teams']['home']['id'])['name'] + "-" + \
-                                  getTeam(d['teams']['away']['id'])['name'] + "-" + \
-                                  str(d['fixture']['id'])
+                fixture['slug'] = slugify(getTeam(d['teams']['home']['id'])['slug'] + "-" +
+                                          getTeam(d['teams']['away']['id'])['slug'] + "-" +
+                                          str(d['fixture']['id']))
                 fixture['hometeam_id'] = mydb.getTeamToSeason(
                     d['teams']['home']['id'], season_id)['id']
                 fixture['awayteam_id'] = mydb.getTeamToSeason(

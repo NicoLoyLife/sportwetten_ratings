@@ -12,6 +12,9 @@ class Country(models.Model):
     class Meta:
         ordering = ['name']
 
+    def __str__(self):
+        return self.name
+
 
 class League(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -24,6 +27,9 @@ class League(models.Model):
 
     class Meta:
         ordering = ['country', 'name']
+
+    def __str__(self):
+        return self.name
 
 
 class Season(models.Model):
@@ -42,6 +48,9 @@ class Season(models.Model):
         ]
         ordering = ['league', '-year']
 
+    def __str__(self):
+        return str(self.year)
+
 
 class Team(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -54,6 +63,9 @@ class Team(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def __str__(self):
+        return self.name
 
 
 class TeamToSeason(models.Model):
@@ -87,7 +99,10 @@ class Fixture(models.Model):
     slug = models.SlugField(unique=True, max_length=128)
 
     class Meta:
-        ordering = ['season', 'date']
+        ordering = ['date']
+
+    def __str__(self):
+        return self.id
 
 
 class Statistic(models.Model):
@@ -140,6 +155,8 @@ class Statistic(models.Model):
     goals_a = models.IntegerField(null=True)
     throwins_h = models.IntegerField(null=True)
     throwins_a = models.IntegerField(null=True)
+    medical_treatment_h = models.IntegerField(null=True)
+    medical_treatment_a = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']
@@ -151,6 +168,9 @@ class Bookmaker(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def __str__(self):
+        return self.name
 
 
 class Bet(models.Model):
