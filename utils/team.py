@@ -68,7 +68,7 @@ class Worker(Thread):
     def run(self):
         while True:
             # Get the work from the queue
-            season_id, year, league_id, country_id, counter, total_count = self.queue.get()
+            season_id, year, league_id, counter, total_count = self.queue.get()
 
             try:
                 url = "https://v3.football.api-sports.io/teams?league={league_id}&season={year}".format(
@@ -81,14 +81,14 @@ class Worker(Thread):
                         team = {'id': d['team']['id'], 'name': d['team']['name'],
                                 'national': d['team']['national'],
                                 'slug': slugify(d['team']['name']),
-                                'country_id': country_id}
+                                'country_id': mydb.getCountry(d['team']['country'])}
 
                         if d['team']['code'] is not None:
                             team['code'] = d['team']['code']
 
                         if d['team']['logo'] is not None:
                             team['logo'] = 'team-logos/{}'.format(
-                                d['team']['logo'].split('/')[-1])
+                                team['slug'])
                             downloader(d['team']['logo'], team['logo'])
 
                         teamtoseason = {'season_id': season_id, 'team_id': team['id']}
@@ -131,9 +131,8 @@ def teams():
                 season_id = s['id']
                 year = s['year']
                 league_id = s['league_id']
-                country_id = mydb.getLeague(league_id)['country_id']
 
-                queue.put((season_id, year, league_id, country_id, counter, len(all_seasons)))
+                queue.put((season_id, year, league_id, counter, len(all_seasons)))
 
             # Causes the main thread to wait for the queue to finish processing all the tasks
             queue.join()

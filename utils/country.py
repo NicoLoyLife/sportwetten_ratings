@@ -56,7 +56,7 @@ def countries():
                         country['code2'] = d['code']
 
                     if d['flag'] is not None:
-                        country['flag'] = 'country-flags/{}'.format(d['flag'].split('/')[-1])
+                        country['flag'] = 'country-flags/{}'.format(country['slug'])
                         downloader(d['flag'], country['flag'])
 
                     # print(country)

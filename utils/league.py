@@ -80,7 +80,7 @@ def leagues():
                               'slug': slugify(d['league']['name'])}
 
                     if d['league']['logo'] is not None:
-                        league['logo'] = 'league-logos/{}'.format(d['league']['logo'].split('/')[-1])
+                        league['logo'] = 'league-logos/{}'.format(league['slug'])
                         downloader(d['league']['logo'], league['logo'])
 
                     league['country_id'] = mydb.getCountry(d['country']['name'], d['country']['code'])['id']
